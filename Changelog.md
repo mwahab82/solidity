@@ -6,6 +6,7 @@ Breaking Changes:
  * Code Generator: Cause a panic if a byte array in storage is accessed whose length is encoded incorrectly.
  * Command Line Interface: Remove the legacy ``--ast-json`` option. Only the ``--ast-compact-json`` option is supported now.
  * General: Remove global functions ``log0``, ``log1``, ``log2``, ``log3`` and ``log4``.
+ * General: Enable ABI coder v2 by default.
  * Standard JSON: Remove the ``legacyAST`` option.
  * Type Checker: Function call options can only be given once.
  * Type System: Unary negation can only be used on signed integers, not on unsigned integers.
