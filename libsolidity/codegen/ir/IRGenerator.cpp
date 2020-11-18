@@ -48,6 +48,47 @@ using namespace solidity;
 using namespace solidity::util;
 using namespace solidity::frontend;
 
+namespace {
+
+void verifyCallGraph(set<ASTNode const*, ASTNode::CompareByID> const& _nodes, set<string>& _functionList)
+{
+	for (auto const& node: _nodes)
+		if (auto const* functionDef = dynamic_cast<FunctionDefinition const*>(node))
+			solAssert(_functionList.erase(IRNames::function(*functionDef)) == 1, "Function not found in generated code");
+
+	static string const funPrefix = "fun_";
+
+	for (string const& name: _functionList)
+		solAssert(name.substr(0, funPrefix.size()) != funPrefix, "Functions found in code gen that were not in the call graph");
+}
+
+
+void collectCalls(FunctionCallGraphBuilder::ContractCallGraph const& _graph, ASTNode const* _root, set<ASTNode const*, ASTNode::CompareByID>& _functions)
+{
+	if (_functions.count(_root) > 0)
+		return;
+
+	set<ASTNode const*, ASTNode::CompareByID> toVisit{_root};
+
+	_functions.emplace(_root);
+
+	while (!toVisit.empty())
+	{
+		ASTNode const* function = *toVisit.begin();
+		toVisit.erase(toVisit.begin());
+
+		auto callees = _graph.edges.find(function);
+		if (callees == _graph.edges.end())
+			continue;
+
+		for (auto& callee: callees->second)
+			if (_functions.emplace(callee).second)
+				toVisit.emplace(callee);
+	}
+}
+
+}
+
 pair<string, string> IRGenerator::run(
 	ContractDefinition const& _contract,
 	map<ContractDefinition const*, string_view const> const& _otherYulSources
@@ -74,6 +115,40 @@ pair<string, string> IRGenerator::run(
 		" *******************************************************/\n\n";
 
 	return {warning + ir, warning + asmStack.print()};
+}
+
+void IRGenerator::verifyCallGraph(FunctionCallGraphBuilder::ContractCallGraph const& _graph)
+{
+	set<ASTNode const*, ASTNode::CompareByID> functions;
+
+	{
+		auto callees = _graph.edges.find(FunctionCallGraphBuilder::SpecialNode::CreationRoot);
+
+		if (callees != _graph.edges.end())
+			for (auto callee: callees->second)
+				collectCalls(_graph, callee, functions);
+
+		auto dispatchCallees = _graph.edges.find(FunctionCallGraphBuilder::SpecialNode::CreationDispatch);
+
+		if (dispatchCallees != _graph.edges.end())
+			for (auto callee: dispatchCallees->second)
+				collectCalls(_graph, callee, functions);
+
+	}
+
+	::verifyCallGraph(functions, m_creationFunctionList);
+
+	functions.clear();
+
+	{
+		auto callees = _graph.edges.find(FunctionCallGraphBuilder::SpecialNode::RuntimeDispatch);
+
+		if (callees != _graph.edges.end())
+			for (auto callee: callees->second)
+				collectCalls(_graph, callee, functions);
+	}
+
+	::verifyCallGraph(functions, m_runtimeFunctionList);
 }
 
 string IRGenerator::generate(
@@ -140,7 +215,8 @@ string IRGenerator::generate(
 	generateImplicitConstructors(_contract);
 	generateQueuedFunctions();
 	InternalDispatchMap internalDispatchMap = generateInternalDispatchFunctions();
-	t("functions", m_context.functionCollector().requestedFunctions());
+
+	t("functions", m_context.functionCollector().requestedFunctions(&m_creationFunctionList));
 	t("subObjects", subObjectSources(m_context.subObjectsCreated()));
 
 	// This has to be called only after all other code generation for the creation object is complete.
@@ -159,12 +235,13 @@ string IRGenerator::generate(
 	t("dispatch", dispatchRoutine(_contract));
 	generateQueuedFunctions();
 	generateInternalDispatchFunctions();
-	t("runtimeFunctions", m_context.functionCollector().requestedFunctions());
+	t("runtimeFunctions", m_context.functionCollector().requestedFunctions(&m_runtimeFunctionList));
 	t("runtimeSubObjects", subObjectSources(m_context.subObjectsCreated()));
 
 	// This has to be called only after all other code generation for the runtime object is complete.
 	bool runtimeInvolvesAssembly = m_context.inlineAssemblySeen();
 	t("memoryInitRuntime", memoryInit(!runtimeInvolvesAssembly));
+
 	return t.render();
 }
 

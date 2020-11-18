@@ -29,14 +29,20 @@ using namespace std;
 using namespace solidity;
 using namespace solidity::frontend;
 
-string MultiUseYulFunctionCollector::requestedFunctions()
+string MultiUseYulFunctionCollector::requestedFunctions(std::set<std::string>* _names)
 {
+	if (_names)
+		_names->clear();
+
 	string result;
 	for (auto const& f: m_requestedFunctions)
 	{
 		solAssert(f.second != "<<STUB<<", "");
 		// std::map guarantees ascending order when iterating through its keys.
 		result += f.second;
+
+		if (_names)
+			_names->emplace(f.first);
 	}
 	m_requestedFunctions.clear();
 	return result;

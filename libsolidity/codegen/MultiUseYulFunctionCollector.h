@@ -24,6 +24,7 @@
 
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
 
 namespace solidity::frontend
@@ -46,11 +47,11 @@ public:
 	/// platform-independent.
 	/// Clears the internal list, i.e. calling it again will result in an
 	/// empty return value.
-	std::string requestedFunctions();
+	/// @param _names optional pointer to a set that will be filled with the names of the functions returned
+	std::string requestedFunctions(std::set<std::string>* _names = nullptr);
 
 	/// @returns true IFF a function with the specified name has already been collected.
 	bool contains(std::string const& _name) const { return m_requestedFunctions.count(_name) > 0; }
-
 private:
 	/// Map from function name to code for a multi-use function.
 	std::map<std::string, std::string> m_requestedFunctions;
