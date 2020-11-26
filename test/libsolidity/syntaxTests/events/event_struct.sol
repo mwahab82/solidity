@@ -1,3 +1,4 @@
+pragma abicoder v1;
 contract c {
     struct S { uint a ; }
     event E(S);

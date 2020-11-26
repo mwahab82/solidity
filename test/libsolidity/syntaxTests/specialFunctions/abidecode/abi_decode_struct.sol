@@ -1,3 +1,4 @@
+pragma abicoder v1;
 struct S {
     uint x;
 }

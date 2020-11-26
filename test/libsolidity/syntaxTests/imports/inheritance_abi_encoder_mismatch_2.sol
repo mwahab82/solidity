@@ -8,9 +8,11 @@ contract A
     function f(S memory _s) public returns (S memory,S memory) { }
 }
 ==== Source: B.sol ====
+pragma abicoder v1;
 import "./A.sol";
 contract B is A { }
 ==== Source: C.sol ====
+pragma abicoder v1;
 import "./B.sol";
 contract C is B { }
 // ----

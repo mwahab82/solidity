@@ -1,3 +1,4 @@
+pragma abicoder v1;
 contract c {
     event E(uint[][]);
 }

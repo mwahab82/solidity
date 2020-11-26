@@ -13,6 +13,7 @@ pragma abicoder               v2;
 import "./A.sol";
 contract B is A { }
 ==== Source: C.sol ====
+pragma abicoder v1;
 import "./B.sol";
 contract C is B { }
 // ----
