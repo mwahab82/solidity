@@ -47,7 +47,7 @@ public:
 	static constexpr char const* name{"NameSimplifier"};
 	static void run(OptimiserStepContext& _context, Block& _ast)
 	{
-		NameSimplifier{_context, _ast}(_ast);
+		NameSimplifier{_context}(_ast);
 	}
 
 	using ASTModifier::operator();
@@ -57,19 +57,15 @@ public:
 	void operator()(FunctionDefinition& _funDef) override;
 
 private:
-	NameSimplifier(
-		OptimiserStepContext& _context,
-		Block const& _ast
-	);
+	NameSimplifier(OptimiserStepContext& _context);
 
 	/// Tries to rename a list of variables.
 	void renameVariables(std::vector<TypedName>& _variables);
 
-	void findSimplification(YulString _name);
+	void findSimplification(YulString const& _name);
 	void translate(YulString& _name);
 
 	OptimiserStepContext& m_context;
-	std::set<YulString> m_usedNames;
 	std::map<YulString, YulString> m_translations;
 };
 
