@@ -40,8 +40,13 @@ class YulUtilFunctions;
 class IRGeneratorForStatements: public ASTConstVisitor
 {
 public:
-	IRGeneratorForStatements(IRGenerationContext& _context, YulUtilFunctions& _utils):
+	IRGeneratorForStatements(
+		IRGenerationContext& _context,
+		YulUtilFunctions& _utils,
+		std::function<std::string()> _placeholderCallback = {}
+	):
 		m_context(_context),
+		m_placeholderCallback(std::move(_placeholderCallback)),
 		m_utils(_utils)
 	{}
 
@@ -66,6 +71,7 @@ public:
 	bool visit(Conditional const& _conditional) override;
 	bool visit(Assignment const& _assignment) override;
 	bool visit(TupleExpression const& _tuple) override;
+	void endVisit(PlaceholderStatement const& _placeholder) override;
 	bool visit(IfStatement const& _ifStatement) override;
 	bool visit(ForStatement const& _forStatement) override;
 	bool visit(WhileStatement const& _whileStatement) override;
@@ -134,8 +140,10 @@ private:
 	/// @returns an output stream that can be used to define @a _var using a function call or
 	/// single stack slot expression.
 	std::ostream& define(IRVariable const& _var);
+public:
 	/// Defines @a _var using the value of @a _value while performing type conversions, if required.
 	void define(IRVariable const& _var, IRVariable const& _value) { declareAssign(_var, _value, true); }
+private:
 	/// Assigns @a _var to the value of @a _value while performing type conversions, if required.
 	void assign(IRVariable const& _var, IRVariable const& _value) { declareAssign(_var, _value, false); }
 	/// Declares variable @a _var.
@@ -188,6 +196,7 @@ private:
 
 	std::ostringstream m_code;
 	IRGenerationContext& m_context;
+	std::function<std::string()> m_placeholderCallback;
 	YulUtilFunctions& m_utils;
 	std::optional<IRLValue> m_currentLValue;
 	langutil::SourceLocation m_currentLocation;
