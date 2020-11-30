@@ -34,7 +34,7 @@ function colony_test
     FORCE_ABIv2=false
     CONFIG="truffle.js"
 
-    truffle_setup https://github.com/cameel/colonyNetwork.git fix-incorrectly-upgraded-fallback
+    truffle_setup https://github.com/JoinColony/colonyNetwork.git develop
     run_install install_fn
 
     cd lib
