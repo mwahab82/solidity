@@ -31,11 +31,12 @@ function test_fn { npm test; }
 function gnosis_safe_test
 {
     OPTIMIZER_LEVEL=1
-    CONFIG="truffle.js"
+    CONFIG="truffle-config.js"
 
-    truffle_setup https://github.com/cameel/safe-contracts.git external-test-fixes
+    truffle_setup https://github.com/cameel/safe-contracts.git v2_070
 
-    sed -i 's|github:gnosis/mock-contract#sol_0_5_0|github:solidity-external-tests/mock-contract#master_070|g' package.json
+    sed -i 's|github:gnosis/mock-contract#sol_0_5_0|github:gnosis/mock-contract#master|g' package.json
+    sed -i -E 's|"@gnosis.pm/util-contracts": "[^"]+"|"@gnosis.pm/util-contracts": "github:gnosis/util-contracts#solc-6"|g' package.json
     rm -f package-lock.json
     rm -rf node_modules/
 
